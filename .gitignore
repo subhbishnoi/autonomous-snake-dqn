@@ -1,0 +1,60 @@
+# ==============================
+# Python Virtual Environments
+# ==============================
+venv/
+.venv/
+
+# ==============================
+# Python Cache
+# ==============================
+__pycache__/
+*.py[cod]
+
+# ==============================
+# Jupyter Notebook
+# ==============================
+.ipynb_checkpoints/
+
+# ==============================
+# Environment Variables / Secrets
+# ==============================
+.env
+.env.*
+
+# ==============================
+# IDE Settings
+# ==============================
+.vscode/
+.idea/
+
+# ==============================
+# OS Files
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# Logs
+# ==============================
+*.log
+
+# ==============================
+# Training Data / CSV Outputs
+# ==============================
+results/*.csv
+
+# ==============================
+# Trained Models
+# ==============================
+models/dqn/*
+models/q_learning/*
+
+# Keep model directory structure
+!models/dqn/.gitkeep
+!models/q_learning/.gitkeep
+
+# ==============================
+# Keep Visualization Results
+# ==============================
+!results/plots/
+!results/plots/*.png
