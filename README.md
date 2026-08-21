@@ -1,610 +1,330 @@
 # 🐍 Autonomous Snake Game — Q-Learning & Deep Q-Learning
 
-An autonomous Snake game where Reinforcement Learning agents learn to play through trial and error.
+An autonomous Snake game where reinforcement learning agents learn to play the game through interaction with the environment.
 
-This project implements and compares two approaches:
+This project implements and compares two reinforcement learning approaches:
 
-* **Tabular Q-Learning**
-* **Deep Q-Network (DQN)**
+- **Tabular Q-Learning**
+- **Deep Q-Network (DQN)**
 
-The agents interact with a custom Snake environment built using **Python and Pygame**, receive rewards and penalties from the environment, and progressively improve their gameplay through reinforcement learning.
-
----
-
-## 🎯 Project Objective
-
-The goal is not to program the snake with predefined rules.
-
-Instead, the agent starts with little or no knowledge of the game and learns a strategy through repeated interaction:
-
-```text
-             ┌──────────────────────┐
-             │   Snake Environment  │
-             │       Pygame         │
-             └──────────┬───────────┘
-                        │
-                        ▼
-                   State
-                        │
-              ┌─────────┴─────────┐
-              │                   │
-              ▼                   ▼
-        Q-Learning               DQN
-        Q-Table             Neural Network
-              │                   │
-              └─────────┬─────────┘
-                        │
-                        ▼
-                     Action
-                        │
-                        ▼
-                Snake Environment
-                        │
-                        ▼
-                     Reward
-                        │
-                        ▼
-                      Learn
-                        │
-                        └──────────► Repeat
-```
-
-The objective is to maximize cumulative reward while learning to:
-
-* Find food
-* Avoid collisions
-* Navigate efficiently
-* Survive for longer
-* Improve its average score
+The agents do not receive predefined game strategies. Instead, they learn which actions to take based on rewards received from the environment.
 
 ---
 
-# 🚀 Features
+## 🚀 Project Overview
 
-* 🤖 Autonomous Snake agent
-* 🧠 Tabular Q-Learning implementation
-* 🧠 Deep Q-Network implementation
-* 🎮 Custom Pygame environment
-* 🎯 ε-greedy exploration
-* 🔄 Experience Replay
-* 🎯 DQN Target Network
-* 🎁 Configurable reward function
-* 📊 Training metrics
-* 📈 Learning/convergence curves
-* ⚖️ Q-Learning vs DQN comparison
-* 💾 Trained model saving/loading
-* 🔬 Reproducible experiments
+The goal of this project is to build an autonomous Snake-playing agent and study the difference between traditional Q-Learning and Deep Q-Learning.
 
----
+At every step, the agent:
 
-# 🧠 Reinforcement Learning Setup
+1. Observes the current game state.
+2. Selects an action using an epsilon-greedy policy.
+3. Receives a reward from the environment.
+4. Observes the next state.
+5. Updates its knowledge.
+6. Repeats the process until the episode ends.
 
-The Snake environment follows the standard reinforcement learning loop:
-
-```text
-State
-  ↓
-Agent
-  ↓
-Action
-  ↓
-Environment
-  ↓
-Reward + Next State
-  ↓
-Agent learns
-  ↓
-Next step
-```
-
-At every time step, the agent observes the current state and chooses an action.
-
-The environment then returns:
-
-```text
-(state, action, reward, next_state, done)
-```
+The agent gradually learns to avoid collisions and move toward food.
 
 ---
 
-# 🎮 Environment
+## 🧠 Reinforcement Learning Approaches
 
-The game environment is implemented using **Pygame**.
+### 1. Q-Learning
 
-The agent can choose between three relative actions:
-
-```text
-LEFT
-STRAIGHT
-RIGHT
-```
-
-The action space is deliberately kept small so that the learning problem focuses on navigation and decision-making rather than unnecessary complexity.
-
----
-
-# 🧩 State Representation
-
-The agent receives a compact representation of the game state rather than raw game pixels.
-
-The state contains information about:
-
-### Collision danger
+The Q-Learning agent uses a tabular representation:
 
 ```text
-Danger straight
-Danger right
-Danger left
-```
+State → [Q(left), Q(straight), Q(right)]
+The Q-values are updated using the Bellman equation:
 
-### Current direction
+Q(s,a) ← Q(s,a) + α [r + γ max Q(s',a') − Q(s,a)]
 
-```text
-Moving left
-Moving right
-Moving up
-Moving down
-```
+Where:
 
-### Food location
+α = learning rate
+γ = discount factor
+r = reward
+s = current state
+a = selected action
+s' = next state
+2. Deep Q-Network
 
-```text
-Food left
-Food right
-Food up
-Food down
-```
+The DQN agent replaces the Q-table with a neural network.
 
-The resulting state vector contains **11 features**.
-
-Example:
-
-```text
-[
-    danger_straight,
-    danger_right,
-    danger_left,
-
-    direction_left,
-    direction_right,
-    direction_up,
-    direction_down,
-
-    food_left,
-    food_right,
-    food_up,
-    food_down
-]
-```
-
----
-
-# 🎁 Reward Function
-
-The environment uses reward shaping to encourage useful behavior.
-
-| Event                        | Reward |
-| ---------------------------- | -----: |
-| 🍎 Food collected            |    +10 |
-| 🐍 Survival / valid movement |     +1 |
-| 💥 Collision                 |   -100 |
-
-The reward values are configurable so different reward strategies can be tested experimentally.
-
----
-
-# 🧠 Q-Learning
-
-The first agent uses traditional tabular Q-Learning.
-
-The agent maintains a Q-table representing the expected value of taking an action in a particular state.
-
-```text
-State
-  │
-  ▼
-Q-Table
-  │
-  ├── Left
-  ├── Straight
-  └── Right
-          │
-          ▼
-      Best Action
-```
-
-The Q-Learning agent uses an ε-greedy strategy to balance:
-
-* Exploration
-* Exploitation
-
----
-
-# 🤖 Deep Q-Network
-
-The second agent replaces the Q-table with a neural network.
-
-```text
-11-Dimensional State
-        │
-        ▼
-Dense Layer
-256 neurons
-        │
-        ▼
-ReLU
-        │
-        ▼
-Dense Layer
-256 neurons
-        │
-        ▼
-ReLU
-        │
-        ▼
-Output Layer
-3 Q-values
-```
+Game State
+    ↓
+Dense Layer (128)
+    ↓
+Dense Layer (128)
+    ↓
+Output Layer (3)
+    ↓
+Q-values
 
 The three outputs represent the estimated value of:
 
-```text
-Q(left)
-Q(straight)
-Q(right)
-```
+[LEFT, STRAIGHT, RIGHT]
 
-The action with the highest predicted Q-value is selected during exploitation.
+The action with the highest predicted Q-value is selected when exploiting the learned policy.
 
----
+🎯 State Representation
 
-# 🔄 Experience Replay
+The Snake environment uses an 11-dimensional state representation.
 
-The DQN stores previous experiences in a replay buffer:
+The state contains information about:
 
-```text
-(state,
- action,
- reward,
- next_state,
- done)
-```
+Danger straight
+Danger left
+Danger right
+Current movement direction
+Relative food position
 
-The agent randomly samples batches from this memory during training.
+Example:
 
-This helps reduce correlations between consecutive experiences and improves training stability.
+[0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0]
 
-Initial replay memory:
+This compact representation allows the agent to make decisions without directly accessing the entire game board.
 
-```text
-100,000 experiences
-```
+🎁 Reward System
 
----
+The environment uses a custom reward function to encourage useful behavior.
 
-# 🎯 Target Network
+Event	Reward
+Food	+10
+Survival / movement	+1
+Collision	-100
 
-The DQN uses two neural networks:
+The reward structure encourages the agent to:
 
-```text
-Policy Network
-      │
-      └── Predicts current Q-values
+Find food
+Stay alive
+Avoid walls
+Avoid self-collision
+⚙️ Hyperparameters
+Q-Learning
+Parameter	Value
+Learning Rate	0.001
+Discount Factor (γ)	0.95
+Initial Epsilon	1.0
+Minimum Epsilon	0.01
+Epsilon Decay	0.995
+Episodes	1,000
+DQN
+Parameter	Value
+Learning Rate	0.001
+Discount Factor (γ)	0.95
+Batch Size	1,000
+Replay Buffer	100,000
+Initial Epsilon	1.0
+Minimum Epsilon	0.01
+Epsilon Decay	0.995
+Episodes	1,000
+📊 Results
 
-Target Network
-      │
-      └── Generates stable target Q-values
-```
+Both agents were trained for 1,000 episodes.
 
-The target network is periodically synchronized with the policy network.
+Q-Learning Training
+Metric	Result
+Maximum Score	19
+Mean Score	1.59
+Last 100 Episode Average	3.16
+Best 100 Episode Average	3.16
+Episodes With Food	611 / 1000
+Food Acquisition Rate	61.1%
+Maximum Reward	122.7
+Mean Reward	-6.02
+Final Epsilon	0.01
+Q-Table States	214
+DQN Training
+Metric	Result
+Maximum Score	60
+Mean Score	12.32
+Last 100 Episode Average	28.44
+Best 100 Episode Average	29.22
+Episodes With Food	879 / 1000
+Food Acquisition Rate	87.9%
+Maximum Reward	455.0
+Mean Reward	84.90
+Final Epsilon	0.01
+Average Training Loss	2.20
+🏆 DQN Evaluation
 
-This helps stabilize DQN training.
+After training, the DQN was evaluated separately for 100 episodes with exploration disabled.
 
----
+Exploration: OFF
+Evaluation Episodes: 100
+Metric	Result
+Average Score	35.67
+Maximum Score	73
+Median Score	36
+Average Reward	270.44
+Average Survival	799.29 steps
+Food Acquisition	100%
 
-# ⚙️ Hyperparameters
+The evaluation demonstrates that the trained DQN can consistently play the game without random exploration.
 
-The initial experiment uses:
+📈 Q-Learning vs DQN
 
-| Parameter         |           Value |
-| ----------------- | --------------: |
-| Learning Rate     |           0.001 |
-| Discount Factor γ |            0.95 |
-| Batch Size        |            1000 |
-| Replay Memory     |         100,000 |
-| Optimizer         |            Adam |
-| Exploration       |        ε-greedy |
-| Training          | 1,000+ episodes |
+The training results show a substantial difference between the two approaches.
 
-These values will be configurable so that we can perform controlled experiments.
+Mean Score
+Q-Learning : 1.59
+DQN        : 12.32
 
----
+The DQN achieved approximately 7.7× higher mean training score.
 
-# 📊 Evaluation
+Last 100 Episode Average
+Q-Learning : 3.16
+DQN        : 28.44
 
-The agents will be evaluated using:
+The DQN achieved approximately 9× higher average score during the final 100 training episodes.
 
-* Average score
-* Maximum score
-* Average reward
-* Win rate
-* Episode length
-* Training loss
-* Exploration rate
-* Convergence speed
+Food Acquisition
+Q-Learning : 61.1%
+DQN        : 87.9%
 
-The project will compare:
+The DQN also demonstrated a substantially higher ability to successfully reach food during training.
 
-```text
-                 Q-Learning        DQN
-Average Score       --              --
-Maximum Score       --              --
-Win Rate            --              --
-Avg Reward          --              --
-Convergence         --              --
-```
+📊 Visualizations
+Training Performance
+Q-Learning
 
-> Final performance numbers will be generated from the actual training and evaluation runs.
+DQN
 
----
+Q-Learning vs DQN
+Average Score Comparison
 
-# 📈 Results
+Best 100 Episode Comparison
 
-Training automatically generates performance visualizations.
+Score Comparison
 
-### Q-Learning Training
+🎮 Autonomous Gameplay
 
-### DQN Training
+The trained agents can be run directly inside the Pygame environment.
 
-### Algorithm Comparison
+DQN
+python -m src.game.play_dqn
+Q-Learning
+python -m src.game.play_q_learning
 
----
-
-# 🏆 Benchmark
-
-The project will benchmark both agents under the same environment and evaluation conditions.
-
-The final benchmark will report measured results such as:
-
-```text
-Episodes trained:       1,000+
-Average score:          --
-Maximum score:          --
-Win rate:               --
-Convergence episode:    --
-```
-
-All reported performance metrics will be generated from the experiment logs.
-
----
-
-# 🛠️ Tech Stack
-
-### Programming
-
-* Python
-
-### Reinforcement Learning
-
-* Q-Learning
-* Deep Q-Learning
-* Experience Replay
-* ε-greedy exploration
-* Target Networks
-* Reward Engineering
-
-### Machine Learning
-
-* TensorFlow / Keras
-* NumPy
-
-### Environment
-
-* Pygame
-
-### Data & Visualization
-
-* Pandas
-* Matplotlib
-
-### Development
-
-* Git
-* GitHub
-* vs code
-
----
-
-# 📂 Project Structure
-
-```text
+The Pygame window displays the autonomous agent playing Snake using its learned policy.
+Project Structure
 autonomous-snake-dqn/
 │
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── LICENSE
-│
 ├── assets/
-│   ├── demo.gif
-│   ├── q_learning_training.png
-│   ├── dqn_training.png
-│   ├── comparison.png
-│   └── architecture.png
 │
 ├── models/
-│   ├── q_learning/
-│   └── dqn/
-│
-├── results/
-│   ├── q_learning_results.csv
-│   ├── dqn_results.csv
-│   └── comparison_results.csv
+│   ├── dqn/
+│   │   └── .gitkeep
+│   │
+│   └── q_learning/
+│       └── .gitkeep
 │
 ├── notebooks/
-│   └── training_analysis.ipynb
 │
-└── src/
-    │
-    ├── game/
-    │   ├── config.py
-    │   ├── snake.py
-    │   └── environment.py
-    │
-    ├── agents/
-    │   ├── q_learning_agent.py
-    │   ├── dqn_agent.py
-    │   └── replay_memory.py
-    │
-    ├── training/
-    │   ├── train_q_learning.py
-    │   ├── train_dqn.py
-    │   └── evaluate.py
-    │
-    └── utils/
-        ├── metrics.py
-        ├── plotting.py
-        └── model_utils.py
-```
+├── results/
+│   ├── plots/
+│   │   ├── average_score_comparison.png
+│   │   ├── best_100_comparison.png
+│   │   └── q_vs_dqn_score.png
+│   │
+│   ├── dqn_training.png
+│   └── q_learning_training.png
+│
+├── src/
+│   │
+│   ├── agents/
+│   │   ├── dqn_agent.py
+│   │   ├── q_learning_agent.py
+│   │   └── replay_buffer.py
+│   │
+│   ├── evaluation/
+│   │   └── evaluate_dqn.py
+│   │
+│   ├── game/
+│   │   ├── config.py
+│   │   ├── environment.py
+│   │   ├── snake.py
+│   │   ├── play_dqn.py
+│   │   └── play_q_learning.py
+│   │
+│   ├── training/
+│   │   ├── train_dqn.py
+│   │   └── train_q_learning.py
+│   │
+│   ├── utils/
+│   │   ├── plot_results.py
+│   │   └── plot_dqn_results.py
+│   │
+│   └── visualization/
+│       └── ...
+│
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
+🛠️ Technologies
+Python
+NumPy
+Pandas
+TensorFlow
+Keras
+Pygame
+Matplotlib
+🔬 Reinforcement Learning Concepts
 
----
+This project demonstrates practical implementation of:
 
-# ⚡ Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/autonomous-snake-dqn.git
-
-cd autonomous-snake-dqn
-```
-
-Create a virtual environment:
-
-```bash
-python -m venv venv
-```
-
-Activate it on Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-# 🎮 Running the Project
-
-## Train Q-Learning
-
-```bash
-python -m src.training.train_q_learning
-```
-
-## Train DQN
-
-```bash
-python -m src.training.train_dqn
-```
-
-## Evaluate Agents
-
-```bash
-python -m src.training.evaluate
-```
-
----
-
-# 🔬 Experiments
-
-The project is designed for controlled experimentation.
-
-Possible experiments include:
-
-### Reward Engineering
-
-Compare different reward strategies.
-
-### Hyperparameter Tuning
-
-Test:
-
-```text
-Learning Rate
-Gamma
-Batch Size
-Replay Memory
-Epsilon Decay
-```
-
-### Algorithm Comparison
-
-Compare:
-
-```text
+Reinforcement Learning
 Q-Learning
-vs
+Deep Q-Learning
+Bellman Equation
+Markov Decision Process
+Epsilon-Greedy Exploration
+Experience Replay
+Neural Network Function Approximation
+Reward Engineering
+Hyperparameter Tuning
+Model Evaluation
+Training Visualization
+💡 Key Learning
+
+The main difference observed in this project is how the two approaches represent and learn the value function.
+
+Q-Learning
+State → Q-Table → Action
+
+Q-Learning works well when the state space is small and discrete, but its performance becomes limited as the number of possible states grows.
+
 DQN
-```
+State → Neural Network → Q-values → Action
 
-using identical environments and evaluation criteria.
+DQN uses a neural network to approximate the Q-function, allowing it to generalize across states rather than maintaining an explicit Q-value for every state.
 
----
+In this Snake environment, the DQN achieved significantly higher scores and food acquisition rates than the tabular Q-Learning agent.
 
-# 🔮 Future Improvements
+🚀 Future Improvements
 
-Potential extensions:
+Potential improvements include:
 
-* Double DQN
-* Dueling DQN
-* Prioritized Experience Replay
-* CNN-based visual input
-* Curriculum Learning
-* TensorBoard experiment tracking
-* Automated hyperparameter optimization
-* Dockerized training
-* GPU-accelerated experiments
+Double DQN
+Dueling DQN
+Prioritized Experience Replay
+Target Network
+Larger state representation
+Curriculum learning
+Reward shaping experiments
+Hyperparameter optimization
+GPU/WSL2 training
+Training video generation
+TensorBoard experiment tracking
+👨‍💻 Author
 
----
-
-# 📚 Concepts Demonstrated
-
-This project demonstrates practical understanding of:
-
-1. Reinforcement Learning
-2. Markov Decision Processes
-3. Q-Learning
-4. Deep Q-Networks
-5. Bellman equation
-6. Exploration vs exploitation
-7. Reward engineering
-8. Experience Replay
-9. Target Networks
-10. Hyperparameter tuning
-11. Model evaluation
-12. Training convergence
-13. Reinforcement Learning environments
-
----
-
-# 👨‍💻 Author
-
-**Subhash Bishnoi**
+Subhash Bishnoi
 
 B.Tech — Artificial Intelligence & Machine Learning
 
-Focused on Machine Learning, Deep Learning, Reinforcement Learning, and ML Engineering.
+⭐ Project Goal
 
----
-
-# ⭐ Acknowledgements
-
-This project was developed as a practical exploration of Reinforcement Learning and Deep Reinforcement Learning through an interactive game environment.
-
-If you found the project useful, consider giving the repository a ⭐.
+This project was built to understand how reinforcement learning agents can learn gameplay behavior through trial and error and to compare traditional tabular Q-Learning with neural-network-based Deep Q-Learning.
