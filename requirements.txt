@@ -1,0 +1,9 @@
+
+numpy
+pandas
+matplotlib
+pygame
+tensorflow
+fastapi
+uvicorn
+jinja2
