@@ -2,7 +2,7 @@
 numpy
 pandas
 matplotlib
-pygame
+pygame-ce
 tensorflow
 fastapi
 uvicorn
