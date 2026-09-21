@@ -1,0 +1,570 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Snake AI</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b1120;
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: 30px 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: clamp(28px, 5vw, 42px);
+            color: #4ade80;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #94a3b8;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+            gap: 24px;
+        }
+
+        .panel {
+            background: #151e30;
+            border: 1px solid #293449;
+            border-radius: 16px;
+            padding: 22px;
+        }
+
+        .game-panel {
+            text-align: center;
+        }
+
+        .game-panel h2,
+        .side-panel h2 {
+            margin-bottom: 18px;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1 / 1;
+            background: #080d16;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button,
+        select {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            font-size: 15px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #263449;
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            filter: brightness(1.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .primary {
+            background: #16a34a;
+            border-color: #16a34a;
+        }
+
+        select {
+            background: #0f172a;
+            color: white;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .stat {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: bold;
+            color: #4ade80;
+        }
+
+        #status {
+            margin: 16px 0;
+            color: #facc15;
+            min-height: 20px;
+        }
+
+        .instructions {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.7;
+            margin-top: 18px;
+        }
+
+        .graphs {
+            margin-top: 30px;
+        }
+
+        .graphs h2 {
+            margin-bottom: 18px;
+        }
+
+        .graph-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        .graph-card {
+            background: #151e30;
+            border: 1px solid #293449;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .graph-card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .graph-card img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header>
+        <h1>🐍 Autonomous Snake AI</h1>
+        <p>Watch trained Reinforcement Learning agents play Snake</p>
+    </header>
+
+    <main>
+        <div class="layout">
+
+            <!-- Game board -->
+            <section class="panel game-panel">
+                <h2>AI Game Environment</h2>
+
+                <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+                <div class="controls">
+                    <select id="agentSelect" aria-label="Choose AI agent">
+                        <option value="dqn">DQN Agent</option>
+                        <option value="q_learning">Q-Learning Agent</option>
+                    </select>
+
+                    <button id="startBtn" class="primary">
+                        ▶ Start
+                    </button>
+
+                    <button id="pauseBtn" disabled>
+                        ⏸ Pause
+                    </button>
+
+                    <button id="resetBtn">
+                        ↻ Reset
+                    </button>
+                </div>
+
+                <p id="status">Select an agent and press Start.</p>
+
+                <p class="instructions">
+                    This is an autonomous AI demonstration. The selected
+                    trained agent chooses actions using the current game state.
+                    Start a game to watch it play.
+                </p>
+            </section>
+
+            <!-- Stats -->
+            <aside class="panel side-panel">
+                <h2>Game Statistics</h2>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-label">Current Score</div>
+                        <div class="stat-value" id="score">0</div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-label">Steps</div>
+                        <div class="stat-value" id="steps">0</div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-label">Selected Agent</div>
+                        <div class="stat-value" id="agentName"
+                             style="font-size:20px;">DQN</div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-label">Game Status</div>
+                        <div class="stat-value" id="gameStatus"
+                             style="font-size:20px;">Ready</div>
+                    </div>
+                </div>
+
+                <h3>About the Project</h3>
+
+                <p class="instructions">
+                    <strong>DQN:</strong> Uses a neural network to estimate
+                    action values from the environment state.
+                    <br><br>
+                    <strong>Q-Learning:</strong> Uses a Q-table to estimate
+                    action values for discretized states.
+                    <br><br>
+                    Both agents interact with the same Snake environment.
+                </p>
+            </aside>
+
+        </div>
+
+        <!-- Comparison graphs -->
+        <section class="graphs">
+            <h2>Agent Comparison</h2>
+
+            <div class="graph-grid">
+                <div class="graph-card">
+                    <h3>Average Score Comparison</h3>
+                    <img src="/results/plots/average_score_comparison.png"
+                         alt="Average score comparison graph">
+                </div>
+
+                <div class="graph-card">
+                    <h3>Best 100 Episodes</h3>
+                    <img src="/results/plots/best_100_comparison.png"
+                         alt="Best 100 episodes comparison graph">
+                </div>
+
+                <div class="graph-card">
+                    <h3>Q-Learning vs DQN</h3>
+                    <img src="/results/plots/q_vs_dqn_score.png"
+                         alt="Q-learning versus DQN score graph">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="footer">
+        Autonomous Snake AI | DQN + Q-Learning
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const agentSelect = document.getElementById("agentSelect");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const scoreEl = document.getElementById("score");
+    const stepsEl = document.getElementById("steps");
+    const agentNameEl = document.getElementById("agentName");
+    const gameStatusEl = document.getElementById("gameStatus");
+    const statusEl = document.getElementById("status");
+
+    const CELL_SIZE = 20;
+    const GRID_SIZE = 30;
+
+    let gameId = null;
+    let timer = null;
+    let paused = false;
+    let busy = false;
+
+    let currentState = {
+        snake: [],
+        food: { x: 0, y: 0 },
+        score: 0,
+        steps: 0,
+        done: false
+    };
+
+    function drawGame(state) {
+        ctx.fillStyle = "#080d16";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid
+        ctx.strokeStyle = "#1e293b";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= GRID_SIZE; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * CELL_SIZE, 0);
+            ctx.lineTo(i * CELL_SIZE, canvas.height);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, i * CELL_SIZE);
+            ctx.lineTo(canvas.width, i * CELL_SIZE);
+            ctx.stroke();
+        }
+
+        // Food
+        if (state.food) {
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(
+                state.food.x * CELL_SIZE + 2,
+                state.food.y * CELL_SIZE + 2,
+                CELL_SIZE - 4,
+                CELL_SIZE - 4
+            );
+        }
+
+        // Snake
+        if (state.snake) {
+            state.snake.forEach((part, index) => {
+                ctx.fillStyle = index === 0 ? "#4ade80" : "#16a34a";
+
+                ctx.fillRect(
+                    part.x * CELL_SIZE + 1,
+                    part.y * CELL_SIZE + 1,
+                    CELL_SIZE - 2,
+                    CELL_SIZE - 2
+                );
+            });
+        }
+
+        scoreEl.textContent = state.score ?? 0;
+        stepsEl.textContent = state.steps ?? 0;
+    }
+
+    async function apiRequest(url, body = null) {
+        const options = {
+            method: body ? "POST" : "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        };
+
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+            let message = "Request failed";
+
+            try {
+                const error = await response.json();
+                message = error.detail || message;
+            } catch (_) {}
+
+            throw new Error(message);
+        }
+
+        return response.json();
+    }
+
+    function stopTimer() {
+        if (timer !== null) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    }
+
+    function updateControls() {
+        startBtn.disabled = busy || (!paused && gameId !== null &&
+                                    !currentState.done);
+        pauseBtn.disabled = gameId === null || currentState.done;
+        pauseBtn.textContent = paused ? "▶ Resume" : "⏸ Pause";
+    }
+
+    async function startGame() {
+        stopTimer();
+        busy = true;
+        paused = false;
+        gameId = null;
+
+        startBtn.disabled = true;
+        pauseBtn.disabled = true;
+        statusEl.textContent = "Starting game...";
+
+        try {
+            const agent = agentSelect.value;
+
+            const state = await apiRequest("/api/start", { agent });
+
+            gameId = state.game_id;
+            currentState = state;
+
+            agentNameEl.textContent =
+                agent === "dqn" ? "DQN" : "Q-Learning";
+
+            gameStatusEl.textContent = "Running";
+            statusEl.textContent = "AI is playing...";
+            drawGame(state);
+        } catch (error) {
+            statusEl.textContent = "Error: " + error.message;
+            gameStatusEl.textContent = "Error";
+        } finally {
+            busy = false;
+            updateControls();
+        }
+
+        if (gameId !== null) {
+            scheduleNextStep();
+        }
+    }
+
+    async function takeStep() {
+        if (!gameId || paused || busy || currentState.done) {
+            return;
+        }
+
+        busy = true;
+
+        try {
+            const state = await apiRequest("/api/step", {
+                game_id: gameId
+            });
+
+            currentState = state;
+            drawGame(state);
+
+            if (state.done) {
+                gameStatusEl.textContent = "Game Over";
+                statusEl.textContent =
+                    `Game over! Final score: ${state.score}`;
+                stopTimer();
+                updateControls();
+                return;
+            }
+        } catch (error) {
+            statusEl.textContent = "Error: " + error.message;
+            stopTimer();
+            updateControls();
+            return;
+        } finally {
+            busy = false;
+        }
+
+        scheduleNextStep();
+    }
+
+    function scheduleNextStep() {
+        stopTimer();
+
+        if (!paused && gameId && !currentState.done) {
+            timer = setTimeout(takeStep, 120);
+        }
+    }
+
+    startBtn.addEventListener("click", startGame);
+
+    pauseBtn.addEventListener("click", () => {
+        if (!gameId || currentState.done) return;
+
+        paused = !paused;
+
+        if (paused) {
+            stopTimer();
+            gameStatusEl.textContent = "Paused";
+            statusEl.textContent = "Game paused.";
+        } else {
+            gameStatusEl.textContent = "Running";
+            statusEl.textContent = "AI is playing...";
+            scheduleNextStep();
+        }
+
+        updateControls();
+    });
+
+    resetBtn.addEventListener("click", startGame);
+
+    agentSelect.addEventListener("change", () => {
+        agentNameEl.textContent =
+            agentSelect.value === "dqn" ? "DQN" : "Q-Learning";
+    });
+
+    // Initial empty board
+    drawGame(currentState);
+
+    // Check server health
+    apiRequest("/api/health")
+        .then(() => {
+            statusEl.textContent = "Server connected. Select an agent and press Start.";
+        })
+        .catch(() => {
+            statusEl.textContent = "Cannot connect to the server yet.";
+        });
+</script>
+</body>
+</html>
