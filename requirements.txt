@@ -3,7 +3,7 @@ numpy
 pandas
 matplotlib
 pygame-ce
-tensorflow
+tensorflow==2.16.2
 fastapi
 uvicorn
 jinja2
