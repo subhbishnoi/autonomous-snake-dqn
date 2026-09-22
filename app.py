@@ -1,8 +1,8 @@
 
 from pathlib import Path
 import pickle
+import uuid
 
-import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,7 +23,7 @@ MODEL_PATH = BASE_DIR / "models" / "dqn" / "snake_dqn.keras"
 Q_TABLE_PATH = BASE_DIR / "models" / "q_learning" / "q_table.pkl"
 
 TEMPLATES_DIR = BASE_DIR / "templates"
-STATIC_DIR = BASE_DIR / "statics"
+RESULTS_DIR = BASE_DIR / "results"
 
 
 # --------------------------------------------------
@@ -36,25 +36,24 @@ app = FastAPI(
     version="1.0.0",
 )
 
-app.mount(
-    "/static",
-    StaticFiles(directory=str(STATIC_DIR)),
-    name="static",
-)
-RESULTS_DIR = BASE_DIR / "results"
 
-app.mount(
-    "/results",
-    StaticFiles(directory=str(RESULTS_DIR)),
-    name="results",
-)
+# Serve comparison graphs and other results.
+# No /static mount is needed because the HTML has
+# its CSS and JavaScript embedded.
+if RESULTS_DIR.is_dir():
+    app.mount(
+        "/results",
+        StaticFiles(directory=str(RESULTS_DIR)),
+        name="results",
+    )
+
 
 # --------------------------------------------------
 # Load trained agents
 # --------------------------------------------------
 
 def load_dqn_agent():
-    if not MODEL_PATH.exists():
+    if not MODEL_PATH.is_file():
         raise FileNotFoundError(
             f"DQN model not found: {MODEL_PATH}"
         )
@@ -79,7 +78,7 @@ def load_dqn_agent():
 
 
 def load_q_learning_agent():
-    if not Q_TABLE_PATH.exists():
+    if not Q_TABLE_PATH.is_file():
         raise FileNotFoundError(
             f"Q-learning table not found: {Q_TABLE_PATH}"
         )
@@ -97,7 +96,9 @@ def load_q_learning_agent():
     return agent
 
 
-# Load agents when the app starts
+# Load both agents when the app starts.
+# If either model is missing or invalid, startup fails
+# with a clear error in the Render logs.
 dqn_agent = load_dqn_agent()
 q_agent = load_q_learning_agent()
 
@@ -121,7 +122,7 @@ class StepRequest(BaseModel):
 # Helper: prepare game response
 # --------------------------------------------------
 
-def game_state(game_id):
+def game_state(game_id: str):
     game = games[game_id]
     env = game["env"]
 
@@ -148,7 +149,15 @@ def game_state(game_id):
 
 @app.get("/")
 def home():
-    return FileResponse(TEMPLATES_DIR / "index.html")
+    index_file = TEMPLATES_DIR / "index.html"
+
+    if not index_file.is_file():
+        raise HTTPException(
+            status_code=500,
+            detail="templates/index.html was not found.",
+        )
+
+    return FileResponse(index_file)
 
 
 @app.get("/api/health")
@@ -162,19 +171,18 @@ def health():
 
 @app.post("/api/start")
 def start_game(request: StartRequest):
-    agent_name = request.agent.lower()
+    agent_name = request.agent.strip().lower()
 
     if agent_name == "dqn":
         agent = dqn_agent
-    elif agent_name == "q_learning":
+    elif agent_name in ("q_learning", "q-learning"):
         agent = q_agent
+        agent_name = "q_learning"
     else:
         raise HTTPException(
             status_code=400,
             detail="Agent must be 'dqn' or 'q_learning'.",
         )
-
-    import uuid
 
     game_id = str(uuid.uuid4())
 
